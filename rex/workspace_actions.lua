@@ -1,7 +1,7 @@
 -- Workspaces: named Rex sessions, defined in workspaces.lua beside this file.
 --
--- `workspace` switches the app to a workspace's session, building the session from
--- its definition first when it isn't running. `workspaces` lists the definitions and
+-- `rexws_open` switches the app to a workspace's session, building the session from
+-- its definition first when it isn't running. `rexws_list` lists the definitions and
 -- which are running, for launchers such as the Rex Workspaces Alfred workflow.
 --
 -- Both read workspaces.lua each time they run, so an edit applies on the next launch
@@ -188,8 +188,10 @@ local function open(name, rebuild)
   return { session_id = session_id, created = created, shown = shown }
 end
 
+-- Every action name starts with `rexws_`, so none can collide with an action defined
+-- elsewhere in the configuration.
 rex.action{
-  name = "workspace",
+  name = "rexws_open",
   title = "Open Workspace",
   description = "Switch to a workspace from workspaces.lua, building its session if it isn't running.",
   category = "Workspaces",
@@ -200,7 +202,7 @@ rex.action{
 }
 
 rex.action{
-  name = "workspaces",
+  name = "rexws_list",
   title = "List Workspaces",
   description = "List the workspaces in workspaces.lua and whether each is running.",
   category = "Workspaces",
@@ -236,7 +238,7 @@ for _, workspace in ipairs(workspaces) do
   else
     named[slug] = true
     rex.action{
-      name = "open_workspace_" .. slug,
+      name = "rexws_open_" .. slug,
       title = "Open Workspace: " .. workspace.name,
       description = workspace.description,
       category = "Workspaces",

@@ -8,6 +8,7 @@ output="dist/$name.alfredworkflow"
 
 mkdir -p dist
 rm -f "$output"
-zip --quiet --recurse-paths "$output" info.plist icon.png lib.js list.js open.js
+zip --quiet --recurse-paths "$output" info.plist icon.png lib.js list.js open.js \
+  rex/workspace_actions.lua rex/workspaces.example.lua
 
 echo "built $output"

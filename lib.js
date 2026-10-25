@@ -64,7 +64,7 @@
   const failureReason = result =>
     result.stderr.split('\n').pop().replace(/^Error: /, '') || `rex exited with status ${result.status}`
 
-  // A successful run's JSON output, with a readable error when it isn't JSON.
+  // A run's JSON output, with a readable error when it isn't JSON.
   const parseJSON = result => {
     try {
       return JSON.parse(result.stdout)
@@ -75,7 +75,7 @@
 
   // The workspaces Rex knows about, with the file defining them.
   const listWorkspaces = rex => {
-    const result = execute(rex, ['do', 'workspaces', '--json'])
+    const result = execute(rex, ['do', 'rexws_list', '--json'])
     if (result.status !== 0) throw new Error(failureReason(result))
 
     const listing = parseJSON(result)
@@ -84,5 +84,12 @@
     return { file: listing.file, workspaces }
   }
 
-  return { REX_BUNDLE_ID, env, rexPath, execute, failureReason, parseJSON, listWorkspaces }
+  // Whether Rex is reachable but has no workspace actions, meaning setup hasn't run.
+  const actionsMissing = rex => {
+    const result = execute(rex, ['actions', '--json'])
+    if (result.status !== 0) return false
+    return !(parseJSON(result).actions || []).some(action => action.name === 'rexws_list')
+  }
+
+  return { REX_BUNDLE_ID, env, rexPath, readText, execute, failureReason, parseJSON, listWorkspaces, actionsMissing }
 })()

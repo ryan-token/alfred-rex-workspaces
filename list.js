@@ -2,15 +2,17 @@
 
 ObjC.import('Foundation')
 
-// Evaluates lib.js from beside this script. The script's path follows the language
-// in osascript's arguments, and is relative to the folder Alfred runs it from.
-const load = name => {
+// The folder holding this script. Its path follows the language in osascript's
+// arguments, and is relative to the folder Alfred runs it from.
+const HERE = (() => {
   const args = ObjC.deepUnwrap($.NSProcessInfo.processInfo.arguments)
-  const folder = $(args[args.indexOf('JavaScript') + 1]).stringByDeletingLastPathComponent.js || '.'
-  return eval($.NSString.stringWithContentsOfFileEncodingError(`${folder}/${name}`, $.NSUTF8StringEncoding, null).js)
-}
+  return $(args[args.indexOf('JavaScript') + 1]).stringByDeletingLastPathComponent.js || '.'
+})()
 
-const { rexPath, listWorkspaces } = load('lib.js')
+const load = name =>
+  eval($.NSString.stringWithContentsOfFileEncodingError(`${HERE}/${name}`, $.NSUTF8StringEncoding, null).js)
+
+const { rexPath, listWorkspaces, actionsMissing } = load('lib.js')
 
 const count = (total, noun) => `${total} ${noun}${total === 1 ? '' : 's'}`
 
@@ -19,6 +21,13 @@ const basename = path => path.split('/').pop()
 const feed = items => JSON.stringify({ items })
 
 const problem = (title, subtitle) => feed([{ title, subtitle, valid: false }])
+
+const setupItem = () => feed([{
+  title: 'Set up Rex Workspaces',
+  subtitle: 'Press return to add the workspace actions to your Rex configuration',
+  arg: 'setup',
+  variables: { action: 'setup' },
+}])
 
 const toItem = (workspace, file) => ({
   uid: workspace.name,
@@ -46,6 +55,7 @@ function run() {
   try {
     listing = listWorkspaces(rex)
   } catch (error) {
+    if (actionsMissing(rex)) return setupItem()
     return problem('Could not list workspaces', error.message)
   }
 

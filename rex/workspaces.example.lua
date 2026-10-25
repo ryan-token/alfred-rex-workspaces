@@ -1,5 +1,5 @@
--- Workspaces for the `workspace` action in workspace_actions.lua: open one from the
--- command palette, with `rex do workspace name=Work`, or from Alfred.
+-- Workspaces for the `rexws_open` action in workspace_actions.lua: open one from the
+-- command palette, with `rex do rexws_open name=Work`, or from Alfred.
 -- Edits apply on the next launch. A running workspace keeps its current state;
 -- rebuild it to pick up changes (⌥↩ in Alfred, or `rebuild=true`).
 --

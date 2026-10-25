@@ -13,26 +13,25 @@ Remote Control lets the workflow tell the Rex app which session to show.
 
 ## Install
 
-Rex does the work and Alfred is one way to ask for it, so there are two parts.
+Download the latest `.alfredworkflow` from [Releases](https://github.com/ryan-token/alfred-rex-workspaces/releases) and double click it.
 
-1. **The Rex actions.** Copy the files in [`rex/`](rex) into your Rex configuration folder, `~/.config/rex`, renaming the example:
+Rex does the work and Alfred is one way to ask for it, so the workspaces themselves are Rex actions in your Rex configuration. The first time you type `ws`, Alfred offers **Set up Rex Workspaces**. Press <kbd>↩</kbd> and it:
 
-   ```sh
-   cp rex/workspace_actions.lua ~/.config/rex/
-   cp rex/workspaces.example.lua ~/.config/rex/workspaces.lua
-   ```
+1. copies [`workspace_actions.lua`](rex/workspace_actions.lua) into your Rex configuration folder, `~/.config/rex` unless you've moved it
+2. copies [`workspaces.example.lua`](rex/workspaces.example.lua) there as `workspaces.lua`, and opens it for you to edit
+3. adds `require("workspace_actions")` to the end of `init.lua`, creating it if you don't have one
+4. reloads the configuration
 
-   Then load the actions from `~/.config/rex/init.lua`, creating it if you don't have one, and reload:
+It never replaces a file that's already there, and running it again changes nothing. To set up by hand instead, do the same from a clone of this repository:
 
-   ```lua
-   require("workspace_actions")
-   ```
+```sh
+cp rex/workspace_actions.lua ~/.config/rex/
+cp rex/workspaces.example.lua ~/.config/rex/workspaces.lua
+echo 'require("workspace_actions")' >> ~/.config/rex/init.lua
+rex config reload
+```
 
-   ```sh
-   rex config reload
-   ```
-
-2. **The workflow.** Download the latest `.alfredworkflow` from [Releases](https://github.com/ryan-token/alfred-rex-workspaces/releases) and double click it.
+A new version of the workflow doesn't update your copy of `workspace_actions.lua`. To pick up changes, copy it from this repository again.
 
 ## Usage
 
@@ -49,12 +48,12 @@ osascript -e 'tell application "Alfred 5" to run trigger "open" \
   in workflow "com.ryantoken.rex-workspaces" with argument "Work"'
 ```
 
-Because the actions live in Rex, the workflow is only one way in. The same workspaces open from Rex's command palette ("Open Workspace: Work"), from a key you bind in `init.lua`, and from the CLI:
+Because the actions live in Rex, the workflow is only one way in. Their names all start with `rexws_` so they can't collide with your own. The same workspaces open from Rex's command palette ("Open Workspace: Work"), from a key you bind in `init.lua`, and from the CLI:
 
 ```sh
-rex do workspace name=Work
-rex do workspace name=Work rebuild=true
-rex do workspaces --json
+rex do rexws_open name=Work
+rex do rexws_open name=Work rebuild=true
+rex do rexws_list --json
 ```
 
 ## Defining workspaces

@@ -162,7 +162,7 @@ Browse your Rex workspaces via the `ws` keyword.
 - &lt;kbd&gt;⌘&lt;/kbd&gt;&lt;kbd&gt;↩&lt;/kbd&gt; Edit workspaces.lua
 - &lt;kbd&gt;⌥&lt;/kbd&gt;&lt;kbd&gt;↩&lt;/kbd&gt; Rebuild the workspace from its definition
 
-Workspaces are defined in your Rex configuration, which provides the `workspace` and `workspaces` actions this workflow calls. See the README for setting that up.
+Workspaces are defined in your Rex configuration, in the `rexws_open` and `rexws_list` actions this workflow calls. The first time you use the keyword, it offers to set them up for you.
 
 Workspaces can also be opened from a script using the `open` external trigger, passing the workspace's name.
 </string>

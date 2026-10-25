@@ -39,15 +39,18 @@ const readFile = path => {
 }
 
 // The fake prints `<command>.out` to stdout and `<command>.err` to stderr, and exits
-// with `<command>.status`, where the command is `workspaces`, `clients` or `workspace`.
+// with `<command>.status`, where the command is one of the names in the `case` below.
 // Each call's arguments are logged one per line, followed by a line holding `--`.
 const FAKE_REX = `#!/bin/sh
 for arg in "$@"; do printf '%s\\n' "$arg" >> "$FAKE_REX_DIR/calls"; done
 echo -- >> "$FAKE_REX_DIR/calls"
 case "$*" in
-  "do workspaces --json") command=workspaces ;;
+  "do rexws_list --json") command=list ;;
   "client ls --json") command=clients ;;
-  *" do workspace "*) command=workspace ;;
+  *" do rexws_open "*) command=open ;;
+  "actions --json") command=actions ;;
+  "config check --json") command=check ;;
+  "config reload") command=reload ;;
   *) echo "Error: fake rex has no answer for: $*" >&2; exit 2 ;;
 esac
 [ -f "$FAKE_REX_DIR/$command.out" ] && cat "$FAKE_REX_DIR/$command.out"
@@ -72,9 +75,13 @@ const makeRex = (responses = {}) => {
   shell(`chmod +x ${quote(`${directory}/rex`)}`)
 
   const defaults = {
-    workspaces: workspacesOut([]),
+    list: workspacesOut([]),
     clients: { out: JSON.stringify({ clients: [LOCAL_APP] }) },
-    workspace: { out: '{}' },
+    open: { out: '{}' },
+    actions: { out: JSON.stringify({ actions: [{ name: 'rexws_list' }, { name: 'rexws_open' }] }) },
+    // Setup works in a config folder inside the fixture, which doesn't exist yet.
+    check: { out: JSON.stringify({ path: `${directory}/config/init.lua` }) },
+    reload: { out: '' },
   }
   const all = Object.assign(defaults, responses)
   Object.keys(all).forEach(command => {
@@ -130,13 +137,13 @@ const assertContains = (actual, needle, label) => {
 console.log('list.js')
 
 test('lists workspaces in the order they are defined', () => {
-  const rex = makeRex({ workspaces: workspacesOut([{ name: 'Zebra', tabs: 1 }, { name: 'Alpha', tabs: 1 }]) })
+  const rex = makeRex({ list: workspacesOut([{ name: 'Zebra', tabs: 1 }, { name: 'Alpha', tabs: 1 }]) })
   assertEqual(listItems(rex).map(item => item.title), ['Zebra', 'Alpha'], 'titles')
 })
 
 test('says whether each workspace is running', () => {
   const rex = makeRex({
-    workspaces: workspacesOut([
+    list: workspacesOut([
       { name: 'Work', description: 'Everything', tabs: 3, running: true },
       { name: 'Play', description: 'Side projects', tabs: 2, running: false },
     ]),
@@ -145,12 +152,12 @@ test('says whether each workspace is running', () => {
 })
 
 test('describes a workspace by its tab count when it has no description', () => {
-  const rex = makeRex({ workspaces: workspacesOut([{ name: 'One', tabs: 1 }, { name: 'Many', tabs: 4 }]) })
+  const rex = makeRex({ list: workspacesOut([{ name: 'One', tabs: 1 }, { name: 'Many', tabs: 4 }]) })
   assertEqual(listItems(rex).map(item => item.subtitle), ['Not open · 1 tab', 'Not open · 4 tabs'], 'subtitles')
 })
 
 test('opens by name, edits the definitions file, and rebuilds with the modifiers', () => {
-  const rex = makeRex({ workspaces: workspacesOut([{ name: 'Get Lucky', tabs: 2, running: true }], '/x/workspaces.lua') })
+  const rex = makeRex({ list: workspacesOut([{ name: 'Get Lucky', tabs: 2, running: true }], '/x/workspaces.lua') })
   const item = listItems(rex)[0]
 
   assertEqual([item.arg, item.variables.action], ['Get Lucky', 'open'], 'return')
@@ -161,7 +168,7 @@ test('opens by name, edits the definitions file, and rebuilds with the modifiers
 test('offers to edit the definitions file when there are no workspaces', () => {
   // An empty Lua table reaches JSON as an object, so both shapes count as empty.
   ;[[], {}].forEach(empty => {
-    const items = listItems(makeRex({ workspaces: workspacesOut(empty, '/x/workspaces.lua') }))
+    const items = listItems(makeRex({ list: workspacesOut(empty, '/x/workspaces.lua') }))
     assertEqual(items.length, 1, 'item count')
     assertEqual([items[0].arg, items[0].variables.action], ['/x/workspaces.lua', 'edit'], 'item')
   })
@@ -169,7 +176,7 @@ test('offers to edit the definitions file when there are no workspaces', () => {
 
 test('reports why Rex could not list the workspaces', () => {
   const rex = makeRex({
-    workspaces: { err: 'Error: workspaces.lua:4: unexpected symbol near }', status: 1 },
+    list: { err: 'Error: workspaces.lua:4: unexpected symbol near }', status: 1 },
   })
   const items = listItems(rex)
 
@@ -179,9 +186,20 @@ test('reports why Rex could not list the workspaces', () => {
 })
 
 test('reports an answer from Rex that is not JSON', () => {
-  const items = listItems(makeRex({ workspaces: { out: 'Rex is updating…' } }))
+  const items = listItems(makeRex({ list: { out: 'Rex is updating…' } }))
   assertEqual(items[0].title, 'Could not list workspaces', 'title')
   assertContains(items[0].subtitle, 'unexpected answer: Rex is updating', 'subtitle')
+})
+
+test('offers setup when Rex has no workspace actions', () => {
+  const rex = makeRex({
+    list: { err: 'Error: no action named "rexws_list". Run "rex actions" to list them.', status: 1 },
+    actions: { out: JSON.stringify({ actions: [{ name: 'something_else' }] }) },
+  })
+  const items = listItems(rex)
+
+  assertEqual(items.length, 1, 'item count')
+  assertEqual([items[0].title, items[0].variables.action], ['Set up Rex Workspaces', 'setup'], 'item')
 })
 
 test('reports a missing Rex instead of listing workspaces', () => {
@@ -205,19 +223,19 @@ test('opens the workspace as the local Rex app', () => {
 
   const result = runScript('open.js', { args: ['Get Lucky'], env: fakeEnv(rex) })
   assertEqual(result.status, 0, `exit status (${result.output})`)
-  assertEqual(calls(rex).pop(), ['-C', 'client:local-app', 'do', 'workspace', 'name=Get Lucky'], 'call')
+  assertEqual(calls(rex).pop(), ['-C', 'client:local-app', 'do', 'rexws_open', 'name=Get Lucky'], 'call')
 })
 
 test('rebuilds a workspace that is not running without asking', () => {
   // Another workspace is running, which mustn't count for this one.
-  const rex = makeRex({ workspaces: workspacesOut([{ name: 'Work', tabs: 1, running: false }, { name: 'Play', tabs: 1, running: true }]) })
+  const rex = makeRex({ list: workspacesOut([{ name: 'Work', tabs: 1, running: false }, { name: 'Play', tabs: 1, running: true }]) })
   const result = runScript('open.js', { args: ['Work'], env: Object.assign(fakeEnv(rex), { action: 'rebuild' }) })
   assertEqual(result.status, 0, `exit status (${result.output})`)
-  assertEqual(calls(rex).pop(), ['-C', 'client:local-app', 'do', 'workspace', 'name=Work', 'rebuild=true'], 'call')
+  assertEqual(calls(rex).pop(), ['-C', 'client:local-app', 'do', 'rexws_open', 'name=Work', 'rebuild=true'], 'call')
 })
 
 test('does not rebuild when Rex cannot say whether the workspace is running', () => {
-  const rex = makeRex({ workspaces: { err: 'Error: workspaces.lua: Work has no tabs', status: 1 } })
+  const rex = makeRex({ list: { err: 'Error: workspaces.lua: Work has no tabs', status: 1 } })
   const result = runScript('open.js', { args: ['Work'], env: Object.assign(fakeEnv(rex), { action: 'rebuild' }) })
 
   assertEqual(result.status !== 0, true, 'exit status')
@@ -240,7 +258,7 @@ test('reports an answer about the apps that is not JSON', () => {
 })
 
 test('reports why Rex could not open the workspace', () => {
-  const rex = makeRex({ workspace: { err: 'Error: no workspace named Nope in /x/workspaces.lua', status: 1 } })
+  const rex = makeRex({ open: { err: 'Error: no workspace named Nope in /x/workspaces.lua', status: 1 } })
   const result = runScript('open.js', { args: ['Nope'], env: fakeEnv(rex) })
 
   assertEqual(result.status !== 0, true, 'exit status')
@@ -251,6 +269,59 @@ test('reports a missing Rex instead of opening', () => {
   const result = runScript('open.js', { args: ['Work'], env: { rex_path: '/nonexistent/rex' } })
   assertEqual(result.status !== 0, true, 'exit status')
   assertContains(result.output, 'Rex is not installed', 'message')
+})
+
+console.log('open.js setup')
+
+const configFolder = rex => `${rex}/config`
+
+const runSetup = rex => runScript('open.js', { env: Object.assign(fakeEnv(rex), { action: 'setup' }) })
+
+const REQUIRE_BLOCK = '-- Named workspaces, defined in workspaces.lua.\nrequire("workspace_actions")\n'
+
+test('sets up a configuration that does not exist yet', () => {
+  const rex = makeRex()
+  const result = runSetup(rex)
+  assertEqual(result.status, 0, `exit status (${result.output})`)
+
+  const folder = configFolder(rex)
+  assertEqual(readFile(`${folder}/workspace_actions.lua`), readFile(`${ROOT}/rex/workspace_actions.lua`), 'module')
+  assertEqual(readFile(`${folder}/workspaces.lua`), readFile(`${ROOT}/rex/workspaces.example.lua`), 'workspaces')
+  assertEqual(readFile(`${folder}/init.lua`), REQUIRE_BLOCK, 'init.lua')
+  assertEqual(calls(rex).pop(), ['config', 'reload'], 'reload')
+})
+
+test('keeps an existing configuration and adds the require only once', () => {
+  const rex = makeRex()
+  const folder = configFolder(rex)
+  shell(`mkdir -p ${quote(folder)}`)
+  write(`${folder}/init.lua`, 'rex.bind("cmd+d", "pane.split")')
+  write(`${folder}/workspaces.lua`, 'return {}\n')
+
+  ;[1, 2].forEach(run => assertEqual(runSetup(rex).status, 0, `run ${run}`))
+
+  assertEqual(readFile(`${folder}/workspaces.lua`), 'return {}\n', 'workspaces')
+  assertEqual(readFile(`${folder}/init.lua`), `rex.bind("cmd+d", "pane.split")\n\n${REQUIRE_BLOCK}`, 'init.lua')
+})
+
+test('keeps a symlinked init.lua a symlink', () => {
+  const rex = makeRex()
+  const folder = configFolder(rex)
+  shell(`mkdir -p ${quote(folder)}`)
+  write(`${rex}/dotfiles-init.lua`, '-- tracked elsewhere\n')
+  shell(`ln -s ${quote(`${rex}/dotfiles-init.lua`)} ${quote(`${folder}/init.lua`)}`)
+
+  assertEqual(runSetup(rex).status, 0, 'exit status')
+  assertEqual(shell(`test -L ${quote(`${folder}/init.lua`)}`).status, 0, 'still a symlink')
+  assertEqual(readFile(`${rex}/dotfiles-init.lua`), `-- tracked elsewhere\n\n${REQUIRE_BLOCK}`, 'target')
+})
+
+test('reports a configuration Rex could not reload', () => {
+  const rex = makeRex({ reload: { err: 'Error: init.lua:3: unexpected symbol', status: 1 } })
+  const result = runSetup(rex)
+
+  assertEqual(result.status !== 0, true, 'exit status')
+  assertContains(result.output, 'init.lua:3: unexpected symbol', 'message')
 })
 
 removeFixtures()
