@@ -10,12 +10,6 @@ ObjC.import('stdlib')
 const app = Application.currentApplication()
 app.includeStandardAdditions = true
 
-const ARGUMENTS = ObjC.deepUnwrap($.NSProcessInfo.processInfo.arguments)
-const scriptPath = ARGUMENTS.find(argument => argument.endsWith('tests/run.js'))
-const ROOT = scriptPath
-  ? $(scriptPath).stringByDeletingLastPathComponent.stringByDeletingLastPathComponent.js
-  : $.NSFileManager.defaultManager.currentDirectoryPath.js
-
 const quote = value => `'${value.replace(/'/g, `'\\''`)}'`
 
 // Wrapping in a group with a trailing echo keeps a failing script from raising, so the
@@ -26,6 +20,15 @@ const shell = command => {
   const marker = lines.pop()
   return { status: Number(marker.replace('__status:', '')), output: lines.join('\n') }
 }
+
+// The repository, as an absolute path. osascript is given this script's path as
+// typed, which is often relative, and a relative path doesn't reliably resolve the
+// same way in this process as in the shells it starts, so the shell resolves it.
+const ROOT = (() => {
+  const args = ObjC.deepUnwrap($.NSProcessInfo.processInfo.arguments)
+  const tests = $(args[args.indexOf('JavaScript') + 1]).stringByDeletingLastPathComponent.js || '.'
+  return shell(`cd ${quote(tests)}/.. && pwd -P`).output
+})()
 
 const manager = $.NSFileManager.defaultManager
 const fixtures = []
