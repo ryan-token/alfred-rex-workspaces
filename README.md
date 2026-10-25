@@ -1,3 +1,5 @@
+<img src="icon.png" width="128" height="128" alt="Rex Workspaces icon">
+
 # Rex Workspaces for Alfred
 
 An [Alfred workflow](https://www.alfredapp.com/workflows/) that opens your [Rex](https://www.superlogical.com/rex) workspaces. A workspace is a named Rex session with its tabs, splits, working directories and startup commands, so one keyword gets you back to a whole working setup.
