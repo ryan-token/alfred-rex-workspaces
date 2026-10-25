@@ -1,0 +1,16 @@
+name: Test
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      # The tests use a fake rex, so they need no Rex install on the runner.
+      - name: Run tests
+        run: ./tests/run.js

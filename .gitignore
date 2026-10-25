@@ -1,0 +1,5 @@
+.DS_Store
+dist/
+
+# Written by Alfred when the workflow's configuration is changed, and holds local settings.
+prefs.plist
