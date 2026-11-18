@@ -18,7 +18,10 @@ const count = (total, noun) => `${total} ${noun}${total === 1 ? '' : 's'}`
 
 const basename = path => path.split('/').pop()
 
-const feed = items => JSON.stringify({ items })
+// strictmods makes a modifier an item doesn't define do nothing, rather than sending
+// the item's own arg down that modifier's connection, such as ⌘↩ on the setup item
+// running setup under an "Edit workspaces.lua" subtitle.
+const feed = items => JSON.stringify({ strictmods: true, items })
 
 const problem = (title, subtitle) => feed([{ title, subtitle, valid: false }])
 
@@ -39,6 +42,7 @@ const toItem = (workspace, file) => ({
   mods: {
     cmd: { subtitle: `Edit ${basename(file)}`, arg: file, variables: { action: 'edit' } },
     alt: {
+      arg: workspace.name,
       subtitle: workspace.running
         ? 'Rebuild from its definition, closing the running session'
         : 'Not running, so this opens it fresh',

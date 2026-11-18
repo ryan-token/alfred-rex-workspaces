@@ -8,6 +8,19 @@
 	<string>Tools</string>
 	<key>connections</key>
 	<dict>
+		<key>2D15EB3B-BE2A-4117-8089-B465D8817F5E</key>
+		<array>
+			<dict>
+				<key>destinationuid</key>
+				<string>FC3BA540-FC4F-4D70-896C-9BBF7C75DE1F</string>
+				<key>modifiers</key>
+				<integer>0</integer>
+				<key>modifiersubtext</key>
+				<string></string>
+				<key>vitoclose</key>
+				<false/>
+			</dict>
+		</array>
 		<key>5200A04F-DF3F-4571-8D7F-D2E1FA453D6D</key>
 		<array>
 			<dict>
@@ -41,11 +54,94 @@
 				<false/>
 			</dict>
 		</array>
-		<key>2D15EB3B-BE2A-4117-8089-B465D8817F5E</key>
+		<key>6B1E3F0A-6A0E-4C1B-9E0B-2F6C1D8A4E01</key>
 		<array>
 			<dict>
 				<key>destinationuid</key>
-				<string>FC3BA540-FC4F-4D70-896C-9BBF7C75DE1F</string>
+				<string>6B1E3F0A-6A0E-4C1B-9E0B-2F6C1D8A4E02</string>
+				<key>modifiers</key>
+				<integer>0</integer>
+				<key>modifiersubtext</key>
+				<string></string>
+				<key>sourceoutputuid</key>
+				<string>6B1E3F0A-6A0E-4C1B-9E0B-2F6C1D8A4F00</string>
+				<key>vitoclose</key>
+				<false/>
+			</dict>
+			<dict>
+				<key>destinationuid</key>
+				<string>6B1E3F0A-6A0E-4C1B-9E0B-2F6C1D8A4E06</string>
+				<key>modifiers</key>
+				<integer>0</integer>
+				<key>modifiersubtext</key>
+				<string></string>
+				<key>sourceoutputuid</key>
+				<string>6B1E3F0A-6A0E-4C1B-9E0B-2F6C1D8A4F01</string>
+				<key>vitoclose</key>
+				<false/>
+			</dict>
+		</array>
+		<key>6B1E3F0A-6A0E-4C1B-9E0B-2F6C1D8A4E02</key>
+		<array>
+			<dict>
+				<key>destinationuid</key>
+				<string>6B1E3F0A-6A0E-4C1B-9E0B-2F6C1D8A4E03</string>
+				<key>modifiers</key>
+				<integer>0</integer>
+				<key>modifiersubtext</key>
+				<string></string>
+				<key>vitoclose</key>
+				<false/>
+			</dict>
+		</array>
+		<key>6B1E3F0A-6A0E-4C1B-9E0B-2F6C1D8A4E03</key>
+		<array>
+			<dict>
+				<key>destinationuid</key>
+				<string>6B1E3F0A-6A0E-4C1B-9E0B-2F6C1D8A4E04</string>
+				<key>modifiers</key>
+				<integer>0</integer>
+				<key>modifiersubtext</key>
+				<string></string>
+				<key>sourceoutputuid</key>
+				<string>6B1E3F0A-6A0E-4C1B-9E0B-2F6C1D8A4F02</string>
+				<key>vitoclose</key>
+				<false/>
+			</dict>
+		</array>
+		<key>6B1E3F0A-6A0E-4C1B-9E0B-2F6C1D8A4E04</key>
+		<array>
+			<dict>
+				<key>destinationuid</key>
+				<string>6B1E3F0A-6A0E-4C1B-9E0B-2F6C1D8A4E05</string>
+				<key>modifiers</key>
+				<integer>0</integer>
+				<key>modifiersubtext</key>
+				<string></string>
+				<key>vitoclose</key>
+				<false/>
+			</dict>
+		</array>
+		<key>6B1E3F0A-6A0E-4C1B-9E0B-2F6C1D8A4E05</key>
+		<array>
+			<dict>
+				<key>destinationuid</key>
+				<string>6B1E3F0A-6A0E-4C1B-9E0B-2F6C1D8A4E06</string>
+				<key>modifiers</key>
+				<integer>0</integer>
+				<key>modifiersubtext</key>
+				<string></string>
+				<key>sourceoutputuid</key>
+				<string>6B1E3F0A-6A0E-4C1B-9E0B-2F6C1D8A4F03</string>
+				<key>vitoclose</key>
+				<false/>
+			</dict>
+		</array>
+		<key>FC3BA540-FC4F-4D70-896C-9BBF7C75DE1F</key>
+		<array>
+			<dict>
+				<key>destinationuid</key>
+				<string>6B1E3F0A-6A0E-4C1B-9E0B-2F6C1D8A4E01</string>
 				<key>modifiers</key>
 				<integer>0</integer>
 				<key>modifiersubtext</key>
@@ -152,6 +248,173 @@
 			<key>version</key>
 			<integer>1</integer>
 		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>conditions</key>
+				<array>
+					<dict>
+						<key>inputstring</key>
+						<string>{var:next}</string>
+						<key>matchcasesensitive</key>
+						<false/>
+						<key>matchmode</key>
+						<integer>0</integer>
+						<key>matchstring</key>
+						<string>confirm</string>
+						<key>outputlabel</key>
+						<string>Confirm</string>
+						<key>uid</key>
+						<string>6B1E3F0A-6A0E-4C1B-9E0B-2F6C1D8A4F00</string>
+					</dict>
+					<dict>
+						<key>inputstring</key>
+						<string>{var:next}</string>
+						<key>matchcasesensitive</key>
+						<false/>
+						<key>matchmode</key>
+						<integer>0</integer>
+						<key>matchstring</key>
+						<string>error</string>
+						<key>outputlabel</key>
+						<string>Error</string>
+						<key>uid</key>
+						<string>6B1E3F0A-6A0E-4C1B-9E0B-2F6C1D8A4F01</string>
+					</dict>
+				</array>
+				<key>elselabel</key>
+				<string>Done</string>
+				<key>hideelse</key>
+				<true/>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.utility.conditional</string>
+			<key>uid</key>
+			<string>6B1E3F0A-6A0E-4C1B-9E0B-2F6C1D8A4E01</string>
+			<key>version</key>
+			<integer>1</integer>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>launchmode</key>
+				<integer>0</integer>
+				<key>path</key>
+				<string>ui/confirm-rebuild.alfredui</string>
+				<key>stackview</key>
+				<false/>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.userinterface.alfredui</string>
+			<key>uid</key>
+			<string>6B1E3F0A-6A0E-4C1B-9E0B-2F6C1D8A4E02</string>
+			<key>version</key>
+			<integer>1</integer>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>conditions</key>
+				<array>
+					<dict>
+						<key>inputstring</key>
+						<string>{var:confirmed}</string>
+						<key>matchcasesensitive</key>
+						<false/>
+						<key>matchmode</key>
+						<integer>0</integer>
+						<key>matchstring</key>
+						<string>true</string>
+						<key>outputlabel</key>
+						<string>Rebuild</string>
+						<key>uid</key>
+						<string>6B1E3F0A-6A0E-4C1B-9E0B-2F6C1D8A4F02</string>
+					</dict>
+				</array>
+				<key>elselabel</key>
+				<string>Done</string>
+				<key>hideelse</key>
+				<true/>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.utility.conditional</string>
+			<key>uid</key>
+			<string>6B1E3F0A-6A0E-4C1B-9E0B-2F6C1D8A4E03</string>
+			<key>version</key>
+			<integer>1</integer>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>concurrently</key>
+				<false/>
+				<key>escaping</key>
+				<integer>102</integer>
+				<key>script</key>
+				<string></string>
+				<key>scriptargtype</key>
+				<integer>1</integer>
+				<key>scriptfile</key>
+				<string>open.js</string>
+				<key>type</key>
+				<integer>8</integer>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.action.script</string>
+			<key>uid</key>
+			<string>6B1E3F0A-6A0E-4C1B-9E0B-2F6C1D8A4E04</string>
+			<key>version</key>
+			<integer>2</integer>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>conditions</key>
+				<array>
+					<dict>
+						<key>inputstring</key>
+						<string>{var:next}</string>
+						<key>matchcasesensitive</key>
+						<false/>
+						<key>matchmode</key>
+						<integer>0</integer>
+						<key>matchstring</key>
+						<string>error</string>
+						<key>outputlabel</key>
+						<string>Error</string>
+						<key>uid</key>
+						<string>6B1E3F0A-6A0E-4C1B-9E0B-2F6C1D8A4F03</string>
+					</dict>
+				</array>
+				<key>elselabel</key>
+				<string>Done</string>
+				<key>hideelse</key>
+				<true/>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.utility.conditional</string>
+			<key>uid</key>
+			<string>6B1E3F0A-6A0E-4C1B-9E0B-2F6C1D8A4E05</string>
+			<key>version</key>
+			<integer>1</integer>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>launchmode</key>
+				<integer>0</integer>
+				<key>path</key>
+				<string>ui/error.alfredui</string>
+				<key>stackview</key>
+				<false/>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.userinterface.alfredui</string>
+			<key>uid</key>
+			<string>6B1E3F0A-6A0E-4C1B-9E0B-2F6C1D8A4E06</string>
+			<key>version</key>
+			<integer>1</integer>
+		</dict>
 	</array>
 	<key>readme</key>
 	<string>## Usage
@@ -160,14 +423,23 @@ Browse your Rex workspaces via the `ws` keyword.
 
 - &lt;kbd&gt;↩&lt;/kbd&gt; Open the workspace, building its session first if it isn't running
 - &lt;kbd&gt;⌘&lt;/kbd&gt;&lt;kbd&gt;↩&lt;/kbd&gt; Edit workspaces.lua
-- &lt;kbd&gt;⌥&lt;/kbd&gt;&lt;kbd&gt;↩&lt;/kbd&gt; Rebuild the workspace from its definition
+- &lt;kbd&gt;⌥&lt;/kbd&gt;&lt;kbd&gt;↩&lt;/kbd&gt; Rebuild the workspace from its definition, asking first if it's running
 
 Workspaces are defined in your Rex configuration, in the `rexws_open` and `rexws_list` actions this workflow calls. The first time you use the keyword, it offers to set them up for you.
 
 Workspaces can also be opened from a script using the `open` external trigger, passing the workspace's name.
+
+If opening, rebuilding, editing or setup fails, Alfred shows why.
 </string>
 	<key>uidata</key>
 	<dict>
+		<key>2D15EB3B-BE2A-4117-8089-B465D8817F5E</key>
+		<dict>
+			<key>xpos</key>
+			<integer>60</integer>
+			<key>ypos</key>
+			<integer>220</integer>
+		</dict>
 		<key>5200A04F-DF3F-4571-8D7F-D2E1FA453D6D</key>
 		<dict>
 			<key>xpos</key>
@@ -175,19 +447,58 @@ Workspaces can also be opened from a script using the `open` external trigger, p
 			<key>ypos</key>
 			<integer>60</integer>
 		</dict>
+		<key>6B1E3F0A-6A0E-4C1B-9E0B-2F6C1D8A4E01</key>
+		<dict>
+			<key>xpos</key>
+			<integer>540</integer>
+			<key>ypos</key>
+			<integer>60</integer>
+		</dict>
+		<key>6B1E3F0A-6A0E-4C1B-9E0B-2F6C1D8A4E02</key>
+		<dict>
+			<key>note</key>
+			<string>Asks before rebuilding a running workspace</string>
+			<key>xpos</key>
+			<integer>720</integer>
+			<key>ypos</key>
+			<integer>40</integer>
+		</dict>
+		<key>6B1E3F0A-6A0E-4C1B-9E0B-2F6C1D8A4E03</key>
+		<dict>
+			<key>xpos</key>
+			<integer>900</integer>
+			<key>ypos</key>
+			<integer>60</integer>
+		</dict>
+		<key>6B1E3F0A-6A0E-4C1B-9E0B-2F6C1D8A4E04</key>
+		<dict>
+			<key>xpos</key>
+			<integer>1080</integer>
+			<key>ypos</key>
+			<integer>40</integer>
+		</dict>
+		<key>6B1E3F0A-6A0E-4C1B-9E0B-2F6C1D8A4E05</key>
+		<dict>
+			<key>xpos</key>
+			<integer>1260</integer>
+			<key>ypos</key>
+			<integer>60</integer>
+		</dict>
+		<key>6B1E3F0A-6A0E-4C1B-9E0B-2F6C1D8A4E06</key>
+		<dict>
+			<key>note</key>
+			<string>Shows why opening, rebuilding, editing or setup failed</string>
+			<key>xpos</key>
+			<integer>900</integer>
+			<key>ypos</key>
+			<integer>220</integer>
+		</dict>
 		<key>FC3BA540-FC4F-4D70-896C-9BBF7C75DE1F</key>
 		<dict>
 			<key>xpos</key>
 			<integer>340</integer>
 			<key>ypos</key>
 			<integer>60</integer>
-		</dict>
-		<key>2D15EB3B-BE2A-4117-8089-B465D8817F5E</key>
-		<dict>
-			<key>xpos</key>
-			<integer>60</integer>
-			<key>ypos</key>
-			<integer>220</integer>
 		</dict>
 	</dict>
 	<key>userconfigurationconfig</key>
@@ -217,7 +528,7 @@ Workspaces can also be opened from a script using the `open` external trigger, p
 	<key>variablesdontexport</key>
 	<array/>
 	<key>version</key>
-	<string>1.0</string>
+	<string>2.0</string>
 	<key>webaddress</key>
 	<string>https://github.com/ryan-token/alfred-rex-workspaces</string>
 </dict>

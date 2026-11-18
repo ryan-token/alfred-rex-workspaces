@@ -1,0 +1,87 @@
+{
+  "bundleid": "com.ryantoken.rex-workspaces.confirm-rebuild",
+  "log": { "level": "warning", "internal": true },
+  "variablesconfig": {
+    "workspace": { "src": "args[0]" }
+  },
+  "window": {
+    "title": "Rebuild {var:workspace}",
+    "padding": 16,
+    "root": {
+      "type": "view",
+      "layout": "border",
+      "spacing": 16,
+      "components": [
+        {
+          "constraints": { "region": "left", "position": "top" },
+          "type": "imageview",
+          "contenttintcolour": "systemOrangeColor",
+          "image": { "type": "symbol", "src": "exclamationmark.triangle.fill", "size": { "width": 32 } },
+          "accessibility": { "label": "Warning" }
+        },
+        {
+          "constraints": { "region": "centre" },
+          "type": "view",
+          "layout": "inline",
+          "direction": "vertical",
+          "spacing": 4,
+          "components": [
+            {
+              "type": "label",
+              "text": "Rebuild {var:workspace}?",
+              "font": { "size": "large", "weight": "bold" }
+            },
+            {
+              "type": "label",
+              "text": "This closes its running session and everything running in it, then builds it again from its definition.",
+              "colour": "secondaryLabelColor",
+              "linebreak": "wordwrap"
+            }
+          ]
+        },
+        {
+          "constraints": { "region": "bottom", "position": "right" },
+          "type": "view",
+          "layout": "inline",
+          "spacing": 8,
+          "components": [
+            {
+              "type": "button",
+              "text": "Cancel",
+              "tooltip": "Cancel ⎋",
+              "events": [
+                {
+                  "triggers": "actioned",
+                  "action": {
+                    "type": "json",
+                    "src": { "finish": { "variables": { "confirmed": "false" } } }
+                  }
+                }
+              ]
+            },
+            {
+              "type": "button",
+              "text": "Rebuild",
+              "shortcut": "↩",
+              "tooltip": "Rebuild ↩",
+              "events": [
+                {
+                  "triggers": "actioned",
+                  "action": {
+                    "type": "json",
+                    "src": {
+                      "finish": {
+                        "args": "{var:workspace}",
+                        "variables": { "action": "rebuild", "confirmed": "true" }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

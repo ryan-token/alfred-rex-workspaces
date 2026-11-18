@@ -8,7 +8,7 @@ Rex sessions keep running when nothing is showing them, so opening a workspace t
 
 ## Requirements
 
-- Alfred 5 with the [Powerpack](https://www.alfredapp.com/powerpack/)
+- Alfred 6 with the [Powerpack](https://www.alfredapp.com/powerpack/). The confirmation and error screens are [Alfred UI](https://www.alfredapp.com/help/alfredui/), which Alfred 5 doesn't have
 - Rex for Mac, with **Remote Control** turned on in Settings → Rex Server
 
 Remote Control lets the workflow tell the Rex app which session to show.
@@ -41,12 +41,12 @@ Browse your workspaces with the `ws` keyword. Each one says whether it's running
 
 - <kbd>↩</kbd> Open the workspace, building it first if it isn't running
 - <kbd>⌘</kbd><kbd>↩</kbd> Edit `workspaces.lua`
-- <kbd>⌥</kbd><kbd>↩</kbd> Rebuild the workspace from its definition. A running one is closed first, after you confirm, along with everything running in it.
+- <kbd>⌥</kbd><kbd>↩</kbd> Rebuild the workspace from its definition. A running one is closed first, along with everything running in it, after you confirm in Alfred.
 
 Workspaces can also be opened from a script or a hotkey using the `open` external trigger:
 
 ```sh
-osascript -e 'tell application "Alfred 5" to run trigger "open" \
+osascript -e 'tell application id "com.runningwithcrayons.Alfred" to run trigger "open" \
   in workflow "com.ryantoken.rex-workspaces" with argument "Work"'
 ```
 
@@ -117,6 +117,8 @@ swift icon/make-icon.swift
 ```
 
 The workflow is two [JXA](https://developer.apple.com/library/archive/documentation/LanguagesUtilities/Conceptual/MacAutomationScriptingGuide/) scripts. `list.js` asks Rex for the workspaces and builds Alfred's result list, and `open.js` asks Rex to open one. What they share, such as finding and running `rex`, is in `lib.js`, which each evaluates since JXA has no module system. There are no dependencies to install and no network access.
+
+`open.js` never shows anything itself. It outputs what should happen next, and Conditionals in the workflow route that to one of two [Alfred UIs](https://www.alfredapp.com/help/alfredui/) in `ui/`. `confirm-rebuild.alfredui` asks before a running workspace is rebuilt, and runs `open.js` again with `confirmed` set if you agree. `error.alfredui` shows why something failed. Alfred discards a script's errors, so `open.js` reports failures in its output instead of exiting with an error.
 
 They find the `rex` CLI on their own, since Alfred doesn't run them with your shell's `PATH`. They prefer the copy installed with the running server, which always matches it, and fall back to the one inside the app.
 

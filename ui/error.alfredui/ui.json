@@ -1,0 +1,84 @@
+{
+  "bundleid": "com.ryantoken.rex-workspaces.error",
+  "log": { "level": "warning", "internal": true },
+  "variablesconfig": {
+    "message": { "src": "args[0]" },
+    "error_title": { "src": "variable", "default": "Rex Workspaces couldn’t finish" }
+  },
+  "window": {
+    "title": "{var:error_title}",
+    "padding": 16,
+    "root": {
+      "type": "view",
+      "layout": "border",
+      "spacing": 16,
+      "components": [
+        {
+          "constraints": { "region": "left", "position": "top" },
+          "type": "imageview",
+          "contenttintcolour": "systemRedColor",
+          "image": { "type": "symbol", "src": "exclamationmark.octagon.fill", "size": { "width": 32 } },
+          "accessibility": { "label": "Error" }
+        },
+        {
+          "constraints": { "region": "centre" },
+          "type": "view",
+          "layout": "inline",
+          "direction": "vertical",
+          "spacing": 4,
+          "components": [
+            {
+              "type": "label",
+              "text": "{var:error_title}",
+              "font": { "size": "large", "weight": "bold" }
+            },
+            {
+              "type": "label",
+              "text": "{var:message}",
+              "colour": "secondaryLabelColor",
+              "linebreak": "wordwrap",
+              "selectable": true
+            }
+          ]
+        },
+        {
+          "constraints": { "region": "bottom", "position": "right" },
+          "type": "view",
+          "layout": "inline",
+          "spacing": 8,
+          "components": [
+            {
+              "id": "copyButton",
+              "type": "button",
+              "text": "Copy Message",
+              "events": [
+                {
+                  "triggers": "actioned",
+                  "action": {
+                    "type": "json",
+                    "src": {
+                      "copy": { "type": "text", "src": "{var:message}" },
+                      "update": { "ids": { "copyButton": { "text": "Copied" } } }
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "type": "button",
+              "text": "OK",
+              "shortcut": "↩",
+              "tooltip": "OK ↩",
+              "events": [
+                {
+                  "triggers": "actioned",
+                  "action": { "type": "json", "src": { "finish": {} } }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

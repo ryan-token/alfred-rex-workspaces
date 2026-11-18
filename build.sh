@@ -4,11 +4,13 @@
 set -eu
 
 name=alfred-rex-workspaces
-output="dist/$name.alfredworkflow"
+# The tests set `output` to build somewhere other than dist.
+output="${output:-dist/$name.alfredworkflow}"
 
-mkdir -p dist
+mkdir -p "$(dirname "$output")"
 rm -f "$output"
 zip --quiet --recurse-paths "$output" info.plist icon.png lib.js list.js open.js \
-  rex/workspace_actions.lua rex/workspaces.example.lua
+  rex/workspace_actions.lua rex/workspaces.example.lua \
+  ui/confirm-rebuild.alfredui/ui.json ui/error.alfredui/ui.json
 
 echo "built $output"

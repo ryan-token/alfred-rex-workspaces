@@ -107,11 +107,34 @@ const runScript = (name, { args = [], env = {} } = {}) => {
 
 const fakeEnv = directory => ({ rex_path: `${directory}/rex`, FAKE_REX_DIR: directory })
 
-const listItems = directory => {
+const listFeed = directory => {
   const result = runScript('list.js', { env: fakeEnv(directory) })
   if (result.status !== 0) throw new Error(`list.js exited ${result.status}: ${result.output}`)
-  return JSON.parse(result.output).items
+  return JSON.parse(result.output)
 }
+
+const listItems = directory => listFeed(directory).items
+
+// open.js reports its outcome as Alfred's Run Script JSON rather than an exit status,
+// so a failure can reach the Error UI. Returns its arg and variables.
+const runOpen = (args, env) => {
+  const result = runScript('open.js', { args, env })
+  if (result.status !== 0) throw new Error(`open.js exited ${result.status}: ${result.output}`)
+  let parsed
+  try {
+    parsed = JSON.parse(result.output).alfredworkflow
+  } catch (error) {
+    throw new Error(`open.js gave output that is not JSON: ${result.output}`)
+  }
+  return Object.assign({ arg: parsed.arg }, parsed.variables)
+}
+
+const assertFailed = (outcome, message) => {
+  assertEqual(outcome.next, 'error', `next (${outcome.arg})`)
+  assertContains(outcome.arg, message, 'message')
+}
+
+const assertSucceeded = outcome => assertEqual(outcome.next, '', `next (${outcome.arg})`)
 
 let passed = 0
 let failed = 0
@@ -165,7 +188,7 @@ test('opens by name, edits the definitions file, and rebuilds with the modifiers
 
   assertEqual([item.arg, item.variables.action], ['Get Lucky', 'open'], 'return')
   assertEqual([item.mods.cmd.arg, item.mods.cmd.variables.action], ['/x/workspaces.lua', 'edit'], 'cmd')
-  assertEqual(item.mods.alt.variables, { action: 'rebuild' }, 'alt')
+  assertEqual([item.mods.alt.arg, item.mods.alt.variables], ['Get Lucky', { action: 'rebuild' }], 'alt')
 })
 
 test('offers to edit the definitions file when there are no workspaces', () => {
@@ -211,12 +234,17 @@ test('reports a missing Rex instead of listing workspaces', () => {
   assertEqual([items[0].title, items[0].valid], ['Rex is not installed', false], 'item')
 })
 
+test('makes modifiers an item does not define do nothing', () => {
+  const rex = makeRex({ list: { err: 'Error: no action named "rexws_list".', status: 1 }, actions: { out: '{"actions":[]}' } })
+  assertEqual(listFeed(rex).strictmods, true, 'strictmods')
+})
+
 console.log('open.js')
 
 test('fails when no workspace is given', () => {
-  const result = runScript('open.js', { env: fakeEnv(makeRex()) })
-  assertEqual(result.status !== 0, true, 'exit status')
-  assertContains(result.output, 'No workspace given', 'message')
+  const outcome = runOpen([], fakeEnv(makeRex()))
+  assertFailed(outcome, 'No workspace given')
+  assertEqual(outcome.error_title, 'Rex Workspaces couldn’t finish', 'title')
 })
 
 test('opens the workspace as the local Rex app', () => {
@@ -224,68 +252,83 @@ test('opens the workspace as the local Rex app', () => {
   const cli = { client_id: 'client:cli', info: { kind: 'cli' }, principal: { transport: 'unix', pid: 1 } }
   const rex = makeRex({ clients: { out: JSON.stringify({ clients: [remoteApp, cli, LOCAL_APP] }) } })
 
-  const result = runScript('open.js', { args: ['Get Lucky'], env: fakeEnv(rex) })
-  assertEqual(result.status, 0, `exit status (${result.output})`)
+  assertSucceeded(runOpen(['Get Lucky'], fakeEnv(rex)))
   assertEqual(calls(rex).pop(), ['-C', 'client:local-app', 'do', 'rexws_open', 'name=Get Lucky'], 'call')
 })
 
 test('rebuilds a workspace that is not running without asking', () => {
   // Another workspace is running, which mustn't count for this one.
   const rex = makeRex({ list: workspacesOut([{ name: 'Work', tabs: 1, running: false }, { name: 'Play', tabs: 1, running: true }]) })
-  const result = runScript('open.js', { args: ['Work'], env: Object.assign(fakeEnv(rex), { action: 'rebuild' }) })
-  assertEqual(result.status, 0, `exit status (${result.output})`)
+  assertSucceeded(runOpen(['Work'], Object.assign(fakeEnv(rex), { action: 'rebuild' })))
   assertEqual(calls(rex).pop(), ['-C', 'client:local-app', 'do', 'rexws_open', 'name=Work', 'rebuild=true'], 'call')
+})
+
+test('asks before rebuilding a running workspace', () => {
+  const rex = makeRex({ list: workspacesOut([{ name: 'Work', tabs: 1, running: true }]) })
+  const outcome = runOpen(['Work'], Object.assign(fakeEnv(rex), { action: 'rebuild' }))
+
+  assertEqual([outcome.next, outcome.arg], ['confirm', 'Work'], 'outcome')
+  assertEqual(calls(rex).some(call => call.includes('rexws_open')), false, 'rebuilt without asking')
+})
+
+test('rebuilds a running workspace once confirmed', () => {
+  const rex = makeRex({ list: workspacesOut([{ name: 'Work', tabs: 1, running: true }]) })
+  assertSucceeded(runOpen(['Work'], Object.assign(fakeEnv(rex), { action: 'rebuild', confirmed: 'true' })))
+  assertEqual(calls(rex).pop(), ['-C', 'client:local-app', 'do', 'rexws_open', 'name=Work', 'rebuild=true'], 'call')
+})
+
+test('clears the confirmation so it cannot carry over to a later run', () => {
+  const outcome = runOpen(['Work'], Object.assign(fakeEnv(makeRex()), { confirmed: 'true' }))
+  assertEqual(outcome.confirmed, '', 'confirmed')
 })
 
 test('does not rebuild when Rex cannot say whether the workspace is running', () => {
   const rex = makeRex({ list: { err: 'Error: workspaces.lua: Work has no tabs', status: 1 } })
-  const result = runScript('open.js', { args: ['Work'], env: Object.assign(fakeEnv(rex), { action: 'rebuild' }) })
+  const outcome = runOpen(['Work'], Object.assign(fakeEnv(rex), { action: 'rebuild' }))
 
-  assertEqual(result.status !== 0, true, 'exit status')
-  assertContains(result.output, 'Work has no tabs', 'message')
+  assertFailed(outcome, 'Work has no tabs')
+  assertEqual(outcome.error_title, 'Couldn’t rebuild Work', 'title')
   assertEqual(calls(rex).some(call => call.includes('rebuild=true')), false, 'rebuilt anyway')
 })
 
 test('rejects an action it does not know', () => {
-  const result = runScript('open.js', { args: ['Work'], env: Object.assign(fakeEnv(makeRex()), { action: 'delete' }) })
-  assertEqual(result.status !== 0, true, 'exit status')
-  assertContains(result.output, 'Unknown action delete', 'message')
+  assertFailed(runOpen(['Work'], Object.assign(fakeEnv(makeRex()), { action: 'delete' })), 'Unknown action delete')
 })
 
 test('reports an answer about the apps that is not JSON', () => {
   const rex = makeRex({ clients: { out: 'Rex is updating…' } })
-  const result = runScript('open.js', { args: ['Work'], env: fakeEnv(rex) })
-
-  assertEqual(result.status !== 0, true, 'exit status')
-  assertContains(result.output, 'unexpected answer: Rex is updating', 'message')
+  assertFailed(runOpen(['Work'], fakeEnv(rex)), 'unexpected answer: Rex is updating')
 })
 
 test('reports why Rex could not open the workspace', () => {
   const rex = makeRex({ open: { err: 'Error: no workspace named Nope in /x/workspaces.lua', status: 1 } })
-  const result = runScript('open.js', { args: ['Nope'], env: fakeEnv(rex) })
+  const outcome = runOpen(['Nope'], fakeEnv(rex))
 
-  assertEqual(result.status !== 0, true, 'exit status')
-  assertContains(result.output, 'no workspace named Nope', 'message')
+  assertFailed(outcome, 'no workspace named Nope')
+  assertEqual(outcome.error_title, 'Couldn’t open Nope', 'title')
 })
 
 test('reports a missing Rex instead of opening', () => {
-  const result = runScript('open.js', { args: ['Work'], env: { rex_path: '/nonexistent/rex' } })
-  assertEqual(result.status !== 0, true, 'exit status')
-  assertContains(result.output, 'Rex is not installed', 'message')
+  assertFailed(runOpen(['Work'], { rex_path: '/nonexistent/rex' }), 'Rex is not installed')
+})
+
+test('reports a definitions file that is not there', () => {
+  const outcome = runOpen(['/nonexistent/workspaces.lua'], Object.assign(fakeEnv(makeRex()), { action: 'edit' }))
+  assertFailed(outcome, 'Nothing to open at /nonexistent/workspaces.lua')
+  assertEqual(outcome.error_title, 'Couldn’t open workspaces.lua', 'title')
 })
 
 console.log('open.js setup')
 
 const configFolder = rex => `${rex}/config`
 
-const runSetup = rex => runScript('open.js', { env: Object.assign(fakeEnv(rex), { action: 'setup' }) })
+const runSetup = rex => runOpen([], Object.assign(fakeEnv(rex), { action: 'setup' }))
 
 const REQUIRE_BLOCK = '-- Named workspaces, defined in workspaces.lua.\nrequire("workspace_actions")\n'
 
 test('sets up a configuration that does not exist yet', () => {
   const rex = makeRex()
-  const result = runSetup(rex)
-  assertEqual(result.status, 0, `exit status (${result.output})`)
+  assertSucceeded(runSetup(rex))
 
   const folder = configFolder(rex)
   assertEqual(readFile(`${folder}/workspace_actions.lua`), readFile(`${ROOT}/rex/workspace_actions.lua`), 'module')
@@ -301,7 +344,7 @@ test('keeps an existing configuration and adds the require only once', () => {
   write(`${folder}/init.lua`, 'rex.bind("cmd+d", "pane.split")')
   write(`${folder}/workspaces.lua`, 'return {}\n')
 
-  ;[1, 2].forEach(run => assertEqual(runSetup(rex).status, 0, `run ${run}`))
+  ;[1, 2].forEach(() => assertSucceeded(runSetup(rex)))
 
   assertEqual(readFile(`${folder}/workspaces.lua`), 'return {}\n', 'workspaces')
   assertEqual(readFile(`${folder}/init.lua`), `rex.bind("cmd+d", "pane.split")\n\n${REQUIRE_BLOCK}`, 'init.lua')
@@ -314,17 +357,51 @@ test('keeps a symlinked init.lua a symlink', () => {
   write(`${rex}/dotfiles-init.lua`, '-- tracked elsewhere\n')
   shell(`ln -s ${quote(`${rex}/dotfiles-init.lua`)} ${quote(`${folder}/init.lua`)}`)
 
-  assertEqual(runSetup(rex).status, 0, 'exit status')
+  assertSucceeded(runSetup(rex))
   assertEqual(shell(`test -L ${quote(`${folder}/init.lua`)}`).status, 0, 'still a symlink')
   assertEqual(readFile(`${rex}/dotfiles-init.lua`), `-- tracked elsewhere\n\n${REQUIRE_BLOCK}`, 'target')
 })
 
 test('reports a configuration Rex could not reload', () => {
   const rex = makeRex({ reload: { err: 'Error: init.lua:3: unexpected symbol', status: 1 } })
-  const result = runSetup(rex)
+  const outcome = runSetup(rex)
 
-  assertEqual(result.status !== 0, true, 'exit status')
-  assertContains(result.output, 'init.lua:3: unexpected symbol', 'message')
+  assertFailed(outcome, 'init.lua:3: unexpected symbol')
+  assertEqual(outcome.error_title, 'Couldn’t set up Rex Workspaces', 'title')
+})
+
+console.log('workflow')
+
+const readPlist = () => {
+  // plutil ends without a newline, which would join its last line to shell's status marker.
+  const converted = shell(`plutil -convert json -o - ${quote(`${ROOT}/info.plist`)} && echo`)
+  if (converted.status !== 0) throw new Error(`info.plist did not convert: ${converted.output}`)
+  return JSON.parse(converted.output)
+}
+
+test('every Alfred UI it shows has a ui.json that parses', () => {
+  const paths = readPlist().objects.filter(object => object.type === 'alfred.workflow.userinterface.alfredui').map(object => object.config.path)
+  assertEqual(paths.length, 2, 'Alfred UI count')
+  paths.forEach(path => {
+    const contents = readFile(`${ROOT}/${path}/ui.json`)
+    if (!contents) throw new Error(`${path}/ui.json is missing`)
+    JSON.parse(contents)
+  })
+})
+
+test('packages every file the workflow refers to', () => {
+  // Built into a fixture folder, so the tests never replace a build in dist.
+  const directory = shell('mktemp -d').output
+  fixtures.push(directory)
+  const output = `${directory}/workflow.alfredworkflow`
+  const built = shell(`cd ${quote(ROOT)} && output=${quote(output)} ./build.sh >/dev/null && unzip -Z1 ${quote(output)}`)
+  assertEqual(built.status, 0, `build (${built.output})`)
+
+  const packaged = built.output.split('\n')
+  const plist = readPlist()
+  const scripts = plist.objects.map(object => object.config.scriptfile).filter(Boolean)
+  const uis = plist.objects.filter(object => object.config.path).map(object => `${object.config.path}/ui.json`)
+  ;[...scripts, ...uis].forEach(file => assertEqual(packaged.includes(file), true, `${file} packaged`))
 })
 
 removeFixtures()

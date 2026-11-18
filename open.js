@@ -19,12 +19,10 @@ const {
 
 const CONNECT_TIMEOUT = 15
 
-const app = Application.currentApplication()
-app.includeStandardAdditions = true
 const manager = $.NSFileManager.defaultManager
 
-// Dialogs, alerts and editors are for a person, so they only appear when Alfred runs
-// the script, never when the tests do.
+// Editors are for a person, so they only open when Alfred runs the script, never
+// when the tests do.
 const interactive = Boolean(env('alfred_workflow_bundleid'))
 
 const requireRex = () => {
@@ -77,26 +75,11 @@ const activate = client => {
 const isRunning = (rex, name) =>
   listWorkspaces(rex).workspaces.some(workspace => workspace.running && workspace.name.toLowerCase() === name.toLowerCase())
 
-const confirmRebuild = name => {
-  try {
-    app.displayDialog(`Rebuild ${name}? This closes its running session and everything running in it.`, {
-      withTitle: 'Rex Workspaces',
-      buttons: ['Cancel', 'Rebuild'],
-      defaultButton: 'Rebuild',
-      cancelButton: 'Cancel',
-      withIcon: 'caution',
-    })
-    return true
-  } catch (error) {
-    // Cancelling raises "User canceled", error -128.
-    if (error.errorNumber === -128) return false
-    throw error
-  }
-}
-
+// Rebuilding a running workspace waits for the Confirm Rebuild UI, which runs the
+// script again with `confirmed` set once the user agrees.
 const open = (name, { rebuild }) => {
   const rex = requireRex()
-  if (rebuild && isRunning(rex, name) && !confirmRebuild(name)) return
+  if (rebuild && env('confirmed') !== 'true' && isRunning(rex, name)) return { next: 'confirm', arg: name }
 
   const client = connectApp(rex)
   const args = ['-C', client.client_id, 'do', 'rexws_open', `name=${name}`]
@@ -105,6 +88,7 @@ const open = (name, { rebuild }) => {
   const result = execute(rex, args)
   if (result.status !== 0) throw new Error(failureReason(result))
   activate(client)
+  return null
 }
 
 // Editing a file
@@ -168,16 +152,34 @@ const setup = () => {
 
 // Entry point
 
-const perform = argv => {
-  const action = env('action') || 'open'
+// What the workflow should do next, as Alfred's JSON for a Run Script's output.
+// `next` is matched by the Conditional after this script: "confirm" shows the Confirm
+// Rebuild UI with the workspace as its argument, "error" shows the Error UI with the
+// message as its argument and `error_title` as its heading, and "" ends the run.
+const output = ({ next = '', arg = '', title = '' }) => JSON.stringify({
+  alfredworkflow: { arg, variables: { next, error_title: title, confirmed: '' } },
+})
+
+// The Error UI's heading for a failed action.
+const failureTitle = (action, target) => {
+  if (!target && action !== 'setup') return 'Rex Workspaces couldn’t finish'
+  switch (action) {
+    case 'setup': return 'Couldn’t set up Rex Workspaces'
+    case 'edit': return `Couldn’t open ${target.split('/').pop()}`
+    case 'rebuild': return `Couldn’t rebuild ${target}`
+    case 'open': return `Couldn’t open ${target}`
+    default: return 'Rex Workspaces couldn’t finish'
+  }
+}
+
+const perform = (action, target) => {
   if (action === 'setup') {
     const file = setup()
     // The example workspaces are a starting point, so open them for editing.
     if (interactive) reveal(file)
-    return
+    return null
   }
 
-  const target = argv[0]
   if (!target) throw new Error('No workspace given')
 
   switch (action) {
@@ -188,12 +190,14 @@ const perform = argv => {
   }
 }
 
+// Failures are output rather than thrown, since Alfred discards a script's errors
+// and stops the run, so the Error UI could never show them.
 function run(argv) {
+  const action = env('action') || 'open'
+  const target = argv[0] || ''
   try {
-    perform(argv)
+    return output(perform(action, target) || {})
   } catch (error) {
-    // Alfred discards a script's errors, so say what went wrong when it ran us.
-    if (interactive) app.displayAlert('Rex Workspaces', { message: error.message, as: 'critical' })
-    throw error
+    return output({ next: 'error', arg: error.message, title: failureTitle(action, target) })
   }
 }
